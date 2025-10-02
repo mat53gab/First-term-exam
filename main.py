@@ -1,7 +1,7 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from typing import Optional
-import sqlite3, hashlib, time
+import sqlite3, hashlib, time, string, itertools
 
 app = FastAPI()
 DB = "users.db"
@@ -12,22 +12,20 @@ numeros="0123456789"
 simbolos="!@#$%&*"
 alphabeths = mayusculas+minusculas+numeros+simbolos
 
-def bruteforce(clave):
-    intentos=0
-    inicio=time.time()
-    for a in alphabeths:
-        intentos+=1
-        if a==clave: return intentos, time.time()-inicio
-    for a in alphabeths:
-        for b in alphabeths:
-            intentos+=1
-            if a+b==clave: return intentos, time.time()-inicio
-    for a in alphabeths:
-        for b in alphabeths:
-            for c in alphabeths:
-                intentos+=1
-                if a+b+c==clave: return intentos, time.time()-inicio
-    return intentos, time.time()-inicio
+def fuerza_bruta(contrasena_objetivo):
+    caracteres = alphabeths 
+    intentos = 0
+    inicio = time.time()
+
+    for longitud in range(1, 4):
+        for tupla in itertools.product(caracteres, repeat=longitud):
+            intento = "".join(tupla)
+            intentos += 1
+            if intento == contrasena_objetivo:
+                segundos = time.time() - inicio
+                return intentos, segundos
+    segundos = time.time() - inicio
+    return intentos, segundos
 
 with sqlite3.connect(DB) as conn:
     conn.execute("""CREATE TABLE IF NOT EXISTS users(
@@ -115,7 +113,7 @@ def login(d: LoginIn):
 
 @app.get("/simulate_bruteforce/{clave}")
 def simulate_bruteforce(clave: str):
-    intentos, segundos = bruteforce(clave)
+    intentos, segundos = fuerza_bruta(clave)
     return {"clave":clave,"intentos":intentos,"tiempo_s":round(segundos,6)}
 
 
